@@ -219,9 +219,9 @@ class RandomPathFollowingScenario(Scenario):
             return self.is_alive
     
         pt_robot = np.array([current_pose.x, current_pose.y])
-        pt_path, pt_path_length, _, _ = self.target_path_helper.find_nearest(pt_robot)
+        pt_path, pt_path_length, pt_seg_idx , _= self.target_path_helper.find_nearest(pt_robot)
         pt_target = self.target_path_helper.get_point_by_distance(distance=
-            pt_path_length + self.robot.path_following_target_point_offset_meters
+            pt_path_length + self.robot.path_following_target_point_offset_meters, seg_id = pt_seg_idx[0]
         )
 
         path_end = target_path[-1]

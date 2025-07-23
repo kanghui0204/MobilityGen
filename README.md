@@ -50,6 +50,57 @@ This enables you to train models and test algorithms related to robot mobility.
 
 To get started with MobilityGen follow the setup and usage instructions below!
 
+## GPU Path Plan Support
+
+MobilityGen now supports GPU-accelerated random path planning for mobile robots. To enhance performance, the traversal and target path search logic in the random path planning scenario has been rewritten to leverage CUDA, significantly speeding up the `get_segment_by_distance` and `get_segment_by_distance_and_seg` functions.
+
+### What’s Improved
+
+- **Path traversal (target path lookup)** now offloaded to the GPU via custom CUDA ops.
+- **Key functions rewritten:**  
+  - `get_segment_by_distance`
+  - `get_segment_by_distance_and_seg`
+- **Higher performance** on large paths, better suited for large-scale simulations and real-time applications.
+
+### CUDA Toolkit Requirement
+
+To use GPU path plan support, you must have the NVIDIA CUDA Toolkit installed on your system.
+
+#### CUDA 12.2 Installation Example (for Ubuntu 22.04)
+
+```
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin
+sudo mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600
+
+wget https://developer.download.nvidia.com/compute/cuda/12.2.2/local_installers/cuda-repo-ubuntu2204-12-2-local_12.2.2-535.104.05-1_amd64.deb
+sudo dpkg -i cuda-repo-ubuntu2204-12-2-local_12.2.2-535.104.05-1_amd64.deb
+
+sudo cp /var/cuda-repo-ubuntu2204-12-2-local/cuda-*-keyring.gpg /usr/share/keyrings/
+sudo apt-get update
+sudo apt-get -y install cuda
+```
+
+> *You can adjust these instructions to match your system and required driver version.*
+
+### Debug & Verification
+
+If you want to compare results between the new GPU logic and the original CPU code (e.g., for validation or debugging), set the following environment variable before running MobilityGen:
+
+```
+export PATH_PLAN_GPU_DEBUG=1
+```
+
+
+With this enabled, the system will:
+- Run both the GPU op and the legacy CPU implementation for path segment queries.
+- Print both results and their differences for easy validation.
+- Still return the GPU op results for downstream use.
+
+### Note
+
+- This support is currently experimental and may require additional testing across different hardware and scenarios.
+- If you have feedback or encounter any issues, please open an issue or discussion in the repository.
+
 ## Table of Contents
 
 - [🛠️ Setup](#setup)
