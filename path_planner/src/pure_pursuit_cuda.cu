@@ -172,6 +172,9 @@ __global__ void find_nearest_kernel(
 }
 
 PurePursuitCuda::PurePursuitCuda(py::array_t<double> path_points, py::array_t<double> distances) {
+    int old_device;
+    CHECK_CUDA(cudaGetDevice(&old_device));
+    CHECK_CUDA(cudaSetDevice(device_id_));
     checkArrays(path_points, distances);
 
     length_ = int(path_points.shape(0));
@@ -188,6 +191,7 @@ PurePursuitCuda::PurePursuitCuda(py::array_t<double> path_points, py::array_t<do
 
     allocateAndCopy(path_points, distances);
 
+    CHECK_CUDA(cudaSetDevice(old_device));
 
 }
 
@@ -224,6 +228,9 @@ void PurePursuitCuda::allocateAndCopy(py::array_t<double> path_points, py::array
 
 
 py::tuple PurePursuitCuda::find_nearest(py::array_t<double> query_point) {
+    int old_device;
+    CHECK_CUDA(cudaGetDevice(&old_device));
+    CHECK_CUDA(cudaSetDevice(device_id_));
     if (query_point.ndim() != 1 || query_point.shape(0) != 2)
         throw std::runtime_error("query_point must be 1D array of size 2");
     auto q = query_point.unchecked<1>();
@@ -248,17 +255,23 @@ py::tuple PurePursuitCuda::find_nearest(py::array_t<double> query_point) {
     double dist_to_seg = h_out_dist_to_seg_[0];
     int seg_idx = h_out_seg_idx_[0];
   
+    CHECK_CUDA(cudaSetDevice(old_device));
 
     return py::make_tuple(
         py::array_t<double>({2}, nearest_pt), dist_along_seg, dist_to_seg, py::make_tuple(seg_idx, seg_idx+1));
 }
 
 PurePursuitCuda::~PurePursuitCuda() {
+    int old_device;
+    CHECK_CUDA(cudaGetDevice(&old_device));
+    CHECK_CUDA(cudaSetDevice(device_id_));
+
     freeDeviceMemory();
     if (stream_ != nullptr) {
         cudaStreamDestroy(stream_);
         stream_ = nullptr;
     }
+    CHECK_CUDA(cudaSetDevice(old_device));
 }
 
 void PurePursuitCuda::freeDeviceMemory() {
