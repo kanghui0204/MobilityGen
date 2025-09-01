@@ -38,11 +38,11 @@ def new_stage() -> Usd.Stage:
     return stage
 
 
-def new_world(physics_dt: float = 0.01, stage_units_in_meters: float = 1.0) -> isaacsim.core.api.World:
+def new_world(physics_dt: float = 0.01, render_dt:float = 0.04, stage_units_in_meters: float = 1.0) -> isaacsim.core.api.World:
     world = get_world()
     if world is not None:
         isaacsim.core.api.World.clear_instance()
-    isaacsim.core.api.World(physics_dt=physics_dt, stage_units_in_meters=stage_units_in_meters)
+    isaacsim.core.api.World(physics_dt=physics_dt,rendering_dt = render_dt, stage_units_in_meters=stage_units_in_meters)
     return isaacsim.core.api.World.instance()
 
 

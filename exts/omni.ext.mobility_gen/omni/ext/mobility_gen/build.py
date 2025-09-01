@@ -38,9 +38,9 @@ def load_scenario(path: str) -> Scenario:
     scenario_type = SCENARIOS.get(config.scenario_type)
     open_stage(os.path.join(path, "stage.usd"))
     prim_utils.delete_prim("/World/robot")
-    new_world(physics_dt=robot_type.physics_dt)
+    new_world(physics_dt=robot_type.physics_dt,render_dt=robot_type.render_dt)
     occupancy_map = reader.read_occupancy_map()
-    robot = robot_type.build("/World/robot")
+    robot = robot_type.build("/World/robot",config.render_dt,config.physics_dt)
     chase_camera_path = robot.build_chase_camera()
     set_viewport_camera(chase_camera_path)
     robot_type = ROBOTS.get(config.robot_type)
@@ -55,11 +55,11 @@ async def build_scenario_from_config(config: Config):
     robot_type = ROBOTS.get(config.robot_type)
     scenario_type = SCENARIOS.get(config.scenario_type)
     new_stage()
-    world = new_world(physics_dt=robot_type.physics_dt)
+    world = new_world(physics_dt=config.physics_dt,render_dt=config.render_dt)
     await world.initialize_simulation_context_async()
     add_reference_to_stage(config.scene_usd,"/World/scene")
     objects.GroundPlane("/World/ground_plane", visible=False)
-    robot = robot_type.build("/World/robot")
+    robot = robot_type.build("/World/robot",config.render_dt,config.physics_dt)
     occupancy_map = await occupancy_map_generate_from_prim_async(
         "/World/scene",
         cell_size=robot.occupancy_map_cell_size,

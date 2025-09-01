@@ -8,6 +8,9 @@ class Config:
     scenario_type: str
     robot_type: str
     scene_usd: str
+    render_dt: float = 0.04
+    physics_dt: float = 0.005
+
 
     def to_json(self):
         return json.dumps(asdict(self), indent=2)

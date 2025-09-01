@@ -28,10 +28,16 @@ from omni.ext.mobility_gen.common import Module, Buffer
 
 
 class Sensor(Module):
+    def __init__(self, render_dt: float, physics_dt: float):
+        super().__init__()
+        self.render_dt = render_dt
+        self.physics_dt = physics_dt
+        self.dt_ratio = render_dt // physics_dt if physics_dt != 0 else 1
+        self.physical_count = 0
 
     def build(self, prim_path: str):
         raise NotImplementedError
-    
+
     def attach(self, prim_path: str):
         raise NotImplementedError
 
@@ -40,9 +46,11 @@ class Camera(Sensor):
 
     def __init__(self,
             prim_path: str,
-            resolution: Tuple[int, int]
+            resolution: Tuple[int, int],
+            render_dt: float,
+            physics_dt: float
         ):
-
+        super().__init__(render_dt, physics_dt)
         self._prim_path = prim_path
         self._resolution = resolution
         self._render_product = None
@@ -139,6 +147,11 @@ class Camera(Sensor):
         self._normals_annotator.attach(self._render_product)
 
     def update_state(self):
+        self.physical_count += 1
+        if self.physical_count % self.dt_ratio != 0:
+            super().update_state()
+            return  
+
         if self._rgb_annotator is not None:
             self.rgb_image.set_value(
                 self._rgb_annotator.get_data()[:, :, :3]
@@ -187,28 +200,37 @@ class HawkCamera(Sensor):
 
     def __init__(self, 
             left: Camera, 
-            right: Camera
+            right: Camera,
+        render_dt: float,
+        physics_dt: float
         ):
+        super().__init__(render_dt, physics_dt)
         self.left = left
         self.right = right
     
     @classmethod
-    def build(cls, prim_path: str) -> "HawkCamera":
-        
+    def build(cls, prim_path: str, render_dt: float,physics_dt: float) -> "HawkCamera":
         stage = get_stage()
-
         stage_add_usd_ref(
             stage=stage,
             path=prim_path,
             usd_path=cls.usd_url
         )
-
-        return cls.attach(prim_path)
+        return cls.attach(prim_path, render_dt, physics_dt)
     
     @classmethod
-    def attach(cls, prim_path: str) -> "HawkCamera":
-        
-        left_camera = Camera(os.path.join(prim_path, cls.left_camera_path), cls.resolution)
-        right_camera = Camera(os.path.join(prim_path, cls.right_camera_path), cls.resolution)
-
-        return HawkCamera(left_camera, right_camera)
+    def attach(cls, prim_path: str, render_dt: float, physics_dt: float) -> "HawkCamera":
+        left_camera = Camera(
+            os.path.join(prim_path, cls.left_camera_path),
+            cls.resolution,
+            render_dt,
+            physics_dt
+        )
+        right_camera = Camera(
+            os.path.join(prim_path, cls.right_camera_path),
+            cls.resolution,
+            render_dt,
+            physics_dt
+        )
+        return HawkCamera(left_camera, right_camera, render_dt, physics_dt)
+       

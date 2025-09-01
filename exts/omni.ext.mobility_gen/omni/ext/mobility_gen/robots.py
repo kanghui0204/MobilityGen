@@ -85,6 +85,7 @@ class Robot(Module):
     """
 
     physics_dt: float
+    render_dt: float
 
     z_offset: float
 
@@ -128,7 +129,10 @@ class Robot(Module):
             prim_path: str,
             robot: _Robot,
             articulation_view: _ArticulationView,
-            front_camera: Sensor
+            front_camera: Sensor,
+            render_dt: float,
+            physics_dt: float
+            
         ):
         self.prim_path = prim_path
         self.robot = robot
@@ -140,9 +144,12 @@ class Robot(Module):
         self.joint_positions = Buffer()
         self.joint_velocities = Buffer()
         self.front_camera = front_camera
+        self.render_dt = render_dt
+        self.physics_dt = physics_dt
+   
 
     @classmethod
-    def build_front_camera(cls, prim_path):
+    def build_front_camera(cls, prim_path,render_dt,physics_dt):
         
         # Add camera
         camera_path = os.path.join(prim_path, cls.front_camera_base_path)
@@ -154,8 +161,7 @@ class Robot(Module):
         prim_rotate_y(front_camera_prim, cls.front_camera_rotation[1])
         prim_rotate_z(front_camera_prim, cls.front_camera_rotation[2])
         prim_translate(front_camera_prim, cls.front_camera_translation)
-
-        return cls.front_camera_type.build(prim_path=camera_path)
+        return cls.front_camera_type.build(prim_path=camera_path,render_dt = render_dt, physics_dt = physics_dt)
 
     def build_chase_camera(self) -> str:
 
@@ -236,19 +242,23 @@ class WheeledRobot(Robot):
             robot: _WheeledRobot,
             articulation_view: _ArticulationView,
             controller: DifferentialController,
+            render_dt: float,
+            physics_dt: float,
             front_camera: Sensor | None = None
         ):
         super().__init__(
             prim_path=prim_path,
             robot=robot,
             articulation_view=articulation_view,
-            front_camera=front_camera
+            front_camera=front_camera,
+            render_dt = render_dt,
+            physics_dt = physics_dt
         )
         self.controller = controller
         self.robot = robot
         
     @classmethod
-    def build(cls, prim_path: str) -> "WheeledRobot":
+    def build(cls, prim_path: str,render_dt,physics_dt) -> "WheeledRobot":
 
         world = get_world()
 
@@ -271,13 +281,15 @@ class WheeledRobot(Robot):
             wheel_base=cls.wheel_base
         )
         
-        camera = cls.build_front_camera(prim_path)
+        camera = cls.build_front_camera(prim_path,render_dt,physics_dt)
 
         return cls(
             prim_path=prim_path,
             robot=robot,
             articulation_view=view,
             controller=controller,
+            render_dt=render_dt,
+            physics_dt = physics_dt,
             front_camera=camera
         )
     
@@ -299,9 +311,11 @@ class IsaacLabRobot(Robot):
             robot: _Robot,
             articulation_view: _ArticulationView,
             controller: Union[H1FlatTerrainPolicy, SpotFlatTerrainPolicy],
+            render_dt: float,
+            physics_dt: float,
             front_camera: Sensor | None = None
         ):
-        super().__init__(prim_path, robot, articulation_view, front_camera)
+        super().__init__(prim_path, robot, articulation_view, front_camera, render_dt = render_dt , physics_dt = physics_dt)
         self.controller = controller
 
     @classmethod
@@ -337,14 +351,16 @@ class IsaacLabRobot(Robot):
         prim_translate(prim, (0, 0, cls.z_offset))
 
 
-        camera = cls.build_front_camera(prim_path)
+        camera = cls.build_front_camera(prim_path,render_dt,physical_dt)
 
         return cls(
             prim_path=prim_path, 
             robot=robot, 
             articulation_view=view, 
             controller=controller,
-            front_camera=camera
+            front_camera=camera,
+            render_dt=render_dt,
+            physics_dt = physics_dt
         )
     
     def write_action(self, step_size):
@@ -368,6 +384,7 @@ ROBOTS = Registry[Robot]()
 class JetbotRobot(WheeledRobot):
 
     physics_dt: float = 0.005
+    render_dt: float = 0.04
 
     z_offset: float = 0.1
 
@@ -416,6 +433,7 @@ class JetbotRobot(WheeledRobot):
 class CarterRobot(WheeledRobot):
 
     physics_dt: float = 0.005
+    render_dt: float = 0.04
 
     z_offset: float = 0.25
 
@@ -464,6 +482,7 @@ class CarterRobot(WheeledRobot):
 class H1Robot(IsaacLabRobot):
 
     physics_dt: float = 0.005
+    render_dt: float = 0.04
 
     z_offset: float = 1.05
 
@@ -517,6 +536,7 @@ class H1Robot(IsaacLabRobot):
 class SpotRobot(IsaacLabRobot):
 
     physics_dt: float = 0.005
+    render_dt: float = 0.04
     z_offset: float = 0.7
 
     chase_camera_base_path = "body"
